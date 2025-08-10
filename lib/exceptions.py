@@ -112,12 +112,13 @@ class ErrorCodeHelper:
     @staticmethod
     def get_error_message(lib_wraper: CPSClient, error_code: int, box_id: int = 0) -> str:
         """获取错误码的详细描述"""
-        if not lib_wraper.lib:
+        if not lib_wraper:
             return f"机器人库未加载，错误码: {error_code}"
         
-        ret, error_msg = lib_wraper.connection.get_error_code_str(box_id, error_code)
-        if ret == 0:
-            return error_msg
+        result = []
+        ret = lib_wraper.HRIF_GetErrorCodeStr(box_id, error_code, result)
+        if ret == 0 and result:
+            return result[0]
         else:
             return f"获取错误信息失败，错误码: {error_code}"
     

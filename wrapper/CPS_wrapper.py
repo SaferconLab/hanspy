@@ -11,7 +11,17 @@ import sys
 import os
 # 添加当前目录到Python路径，以便能找到 .so 文件
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from . import CPS as _CPS #CPS是CPS.cpython-38-x86_64-linux-gnu.so
+# 导入CPS二进制模块
+try:
+    from . import CPS as _CPS #CPS是CPS.cpython-38-x86_64-linux-gnu.so，必须用python3.8运行
+except ImportError as e:
+    print("CPS是CPS.cpython-38-x86_64-linux-gnu.so，必须用python3.8运行")
+    py_version = sys.version_info
+    if py_version.major != 3 or py_version.minor != 8:
+        print(f"当前Python版本: {py_version.major}.{py_version.minor}, 需要Python 3.8")
+    else:
+        print("请确保CPS模块已正确安装")
+
 
 class CPSClient:
     """CPS客户端类，提供机器人控制接口"""

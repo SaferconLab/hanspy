@@ -1,6 +1,7 @@
 # HansRobot Library Python
 
 Python 版本的 HansRobot 控制库，提供对 HansRobot 机器人的完整控制接口。
+支持使用原始CPS接口或高级RobotController封装接口。
 
 ## 项目结构
 
@@ -35,6 +36,12 @@ HansRobot_Library_Python/
 - 状态监控和错误处理机制
 - 详细的文档支持
 - 易于使用的 Python API
+- RobotController高级封装类，提供以下特性：
+  - 自动状态检查和等待机制
+  - 连接、使能、去使能的封装处理
+  - 运动指令的阻塞式执行（自动等待运动完成）
+  - 统一的异常处理机制
+  - 便捷的位置获取和设置接口
 
 ## 安装说明
 
@@ -51,23 +58,54 @@ pip install -r requirements.txt
 
 ## 使用示例
 
+### 基本使用
+
 ```python
 from lib.robot_controller import RobotController
-from lib.status_monitor import StatusMonitor
 
 # 创建机器人控制器实例
-controller = RobotController()
+robot = RobotController(box_id=0, robot_id=0)
 
-# 初始化机器人
-controller.initialize()
+# 连接机器人
+robot.connect("192.168.31.88", 10003)
 
-# 获取机器人状态
-status = controller.get_status()
-print(f"机器人状态: {status}")
+# 使能机器人
+robot.enable()
 
-# 监控机器人状态
-monitor = StatusMonitor(controller)
-monitor.start_monitoring()
+# 执行关节运动
+robot.move_j(
+    points=[0, 0, 0, 0, 0, 0],
+    raw_acs_points=[0, 0, 90, 0, 90, 0],
+    speed=30.0,
+    acc=30.0
+)
+
+# 去使能并断开连接
+robot.disable()
+robot.disconnect()
+```
+
+### 使用原始CPS接口
+
+```python
+from wrapper.CPS_wrapper import CPSClient
+
+# 创建CPS客户端实例
+cps = CPSClient()
+
+# 连接机器人
+ret = cps.HRIF_Connect(0, "192.168.31.88", 10003)
+
+# 使能机器人
+ret = cps.HRIF_GrpEnable(0, 0)
+
+# 执行关节运动
+ret = cps.HRIF_MoveJ(0, 0, [0, 0, 0, 0, 0, 0], [0, 0, 90, 0, 90, 0], 
+                     "TCP", "Base", 30.0, 30.0, 10.0, 1, 0, 0, 0, "0")
+
+# 去使能并断开连接
+cps.HRIF_GrpDisable(0, 0)
+cps.HRIF_DisConnect(0)
 ```
 
 ## 文档
