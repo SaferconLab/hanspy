@@ -1,0 +1,703 @@
+Help on module CPS:
+
+NAME
+    CPS
+
+CLASSES
+    builtins.object
+        CPSClient
+        RbtClient
+    enum.IntEnum(builtins.int, enum.Enum)
+        RbtFSM
+    
+    class CPSClient(builtins.object)
+     |  Methods defined here:
+     |  
+     |  HRIF_AddSafePlane(self, boxID, rbtID, name, UcsName, mode, display, switch)
+     |  
+     |  HRIF_Base2UcsTcp(self, boxID, Base, TCP, UCS, result)
+     |  
+     |  HRIF_BlackOut(self, boxID)
+     |  
+     |  HRIF_CalTcp3P(self, boxID, pos1, pos2, pos3, result)
+     |  
+     |  HRIF_CalTcp4P(self, boxID, pos1, pos2, pos3, pos4, result)
+     |  
+     |  HRIF_CalUcsLine(self, boxID, pos1, pos2, result)
+     |  
+     |  HRIF_CalUcsPlane(self, boxID, pos1, pos2, pos3, result)
+     |  
+     |  HRIF_CheckTemperatureUnderLow(self, boxID, rbtID, result)
+     |  
+     |  HRIF_CloseBrake(self, boxID, nAxisID)
+     |  
+     |  HRIF_ConfigTCP(self, boxID, name, pos)
+     |  
+     |  HRIF_ConfigUCS(self, boxID, name, pos)
+     |  
+     |  HRIF_Connect(self, boxID, hostName, nPort)
+     |  
+     |  HRIF_Connect2Box(self, boxID)
+     |  
+     |  HRIF_Connect2Controller(self, boxID)
+     |  
+     |  HRIF_ContinueScript(self, boxID)
+     |  
+     |  HRIF_DelMovePathJ(self, boxID, rbtID, trackName)
+     |  
+     |  HRIF_DelPath(self, boxID, rbtID, sPathName)
+     |  
+     |  HRIF_DelSafePlane(self, boxID, rbtID, name)
+     |  
+     |  HRIF_DisConnect(self, boxID)
+     |  
+     |  HRIF_Electrify(self, boxID)
+     |  
+     |  HRIF_EnableEndBTN(self, boxID, rbtID, state)
+     |  
+     |  HRIF_EndPushMovePath(self, boxID, rbtID, trackName)
+     |  
+     |  HRIF_EndPushMovePathJ(self, boxID, rbtID, trackName)
+     |  
+     |  HRIF_EndPushPathPoints(self, boxID, rbtID, sPathName)
+     |  
+     |  HRIF_EnterSafetyGuard(self, boxID, rbtID, flag)
+     |  
+     |  HRIF_FinishInitialize(self)
+     |  
+     |  HRIF_ForceControlContinue(self, boxID, rbtID)
+     |  
+     |  HRIF_ForceControlInterrupt(self, boxID, rbtID)
+     |  
+     |  HRIF_GetErrorCodeStr(self, boxID, nErrorCode, result)
+     |  
+     |  HRIF_GetForwardKin(self, boxID, rbtID, rawACS, tcp, ucs, result)
+     |  
+     |  HRIF_GetInverseKin(self, boxID, rbtID, rawPCS, rawACS, tcp, ucs, result)
+     |  
+     |  HRIF_GetMovePathJOLIndex(self, rbtID, boxID, result)
+     |  
+     |  HRIF_GrpCloseFreeDriver(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpContinue(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpDisable(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpEnable(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpInterrupt(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpOpenFreeDriver(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpReset(self, boxID, rbtID)
+     |  
+     |  HRIF_GrpStop(self, boxID, rbtID)
+     |  
+     |  HRIF_HRApp(self, boxID, name, cmd, param, result)
+     |  
+     |  HRIF_HRAppCmd(self, boxID, name, cmd, param, result)
+     |  
+     |  HRIF_InitMovePathL(self, boxID, rbtID, trackName, vel, acc, jerk, ucs, tcp)
+     |  
+     |  HRIF_InitPath(self, boxID, rbtID, nRawDataType, sPathName, dSpeedRatio, dRadius, vel, acc, jerk, ucs, tcp)
+     |  
+     |  HRIF_InitServoEsJ(self, boxID, rbtID)
+     |  
+     |  HRIF_IsBlendingDone(self, boxID, rbtID, result)
+     |  
+     |  HRIF_IsConnected(self, boxID)
+     |  
+     |  HRIF_IsControllerStarted(self, boxID, result)
+     |  
+     |  HRIF_IsMotionDone(self, boxID, rbtID, result)
+     |  
+     |  HRIF_IsSimulateRobot(self, boxID, result)
+     |  
+     |  HRIF_MoveC(self, boxID, rbtID, StartPoint, AuxPoint, EndPoint, fixedPosure, nMoveCType, nRadLen, speed, Acc, radius, tcp, ucs, cmdID)
+     |  
+     |  HRIF_MoveCircularWeave(self, boxID, rbtID, StartPoint, AuxPoint, EndPoint, dVelocity, Acc, dRadius, nOrientMode, nMoveWhole, dMoveWholeLen, dAmplitude, dIntervalDistance, nWeaveFrameType, dElevation, dAzimuth, dCentreRise, nEnableWaiTime, nPosiTime, nNegaTime, sTcpName, sUcsName, sCmdID)
+     |  
+     |  HRIF_MoveE(self, boxID, rbtID, dP1, dP2, dP3, dP4, dP5, nOrientMode, nMoveType, dArcLength, dVelocity, dAcc, Radius, tcp, ucs, cmdID)
+     |  
+     |  HRIF_MoveJ(self, boxID, rbtID, points, RawACSpoints, tcp, ucs, speed, Acc, radius, isJoint, isSeek, bit, state, cmdID)
+     |  
+     |  HRIF_MoveL(self, boxID, rbtID, points, RawACSpoints, tcp, ucs, speed, Acc, radius, isSeek, bit, state, cmdID)
+     |  
+     |  HRIF_MoveLinearWeave(self, boxID, rbtID, StartPoint, EndPoint, dVelocity, Acc, dRadius, dAmplitude, dIntervalDistance, nWeaveFrameType, dElevation, dAzimuth, dCentreRise, nEnableWaiTime, nPosiTime, nNegaTime, sTcpName, sUcsName, sCmdID)
+     |  
+     |  HRIF_MovePathJ(self, boxID, rbtID, sPathName)
+     |  
+     |  HRIF_MovePathJOL(self, boxID, rbtID, dVel, dAcc, dTol, RawACSpoints, nIsSetIO, nEndDOMask, nEndDOVal, nBoxDOMask, nBoxDOVal, nBoxCOMask, nBoxCOVal, nBoxAOCH0_Mask, nBoxAOCH0_Mode, nBoxAOCH1_Mask, nBoxAOCH1_Mode, dbBoxAOCH0_Val, dbBoxAOCH1_Val)
+     |  
+     |  HRIF_MovePathL(self, boxID, rbtID, sPathName)
+     |  
+     |  HRIF_MoveRelJ(self, boxID, rbtID, nAxis, nDirection, dDistance)
+     |  
+     |  HRIF_MoveRelL(self, boxID, rbtID, nAxis, nDirection, dDistance, nToolMotion)
+     |  
+     |  HRIF_MoveS(self, boxID, rbtID, dSpiralIncrement, dSpiralDiameter, dVelocity, dAcc, dRadius, sTcpName, sUcsName, cmdID)
+     |  
+     |  HRIF_MoveToSS(self, boxID)
+     |  
+     |  HRIF_MoveZ(self, boxID, rbtID, StartPoint, EndPoint, PlanePoint, Speed, Acc, WIdth, Density, EnableDensity, EnablePlane, EnableWaiTime, PosiTime, NegaTime, Radius, tcp, ucs, cmdID)
+     |  
+     |  HRIF_OpenBrake(self, boxID, nAxisID)
+     |  
+     |  HRIF_PauseScript(self, boxID)
+     |  
+     |  HRIF_PoseAdd(self, boxID, pos1, pos2, result)
+     |  
+     |  HRIF_PoseDefdFrame(self, boxID, pos1, pos2, pos3, pos4, pos5, pos6, result)
+     |  
+     |  HRIF_PoseDist(self, boxID, pos1, pos2, result)
+     |  
+     |  HRIF_PoseInterpolate(self, boxID, pos1, pos2, alpha, result)
+     |  
+     |  HRIF_PoseInverse(self, boxID, pos1, result)
+     |  
+     |  HRIF_PoseSub(self, boxID, pos1, pos2, result)
+     |  
+     |  HRIF_PoseTrans(self, boxID, pos1, pos2, result)
+     |  
+     |  HRIF_PushMovePathJ(self, boxID, rbtID, trackName, paramsJ)
+     |  
+     |  HRIF_PushMovePathL(self, boxID, rbtID, trackName, paramPcs)
+     |  
+     |  HRIF_PushMovePaths(self, boxID, rbtID, trackName, moveType, pointsSize, points)
+     |  
+     |  HRIF_PushPathPoints(self, boxID, rbtID, sPathName, sPoints)
+     |  
+     |  HRIF_PushServoEsJ(self, boxID, rbtID, nPointSize, sPoints)
+     |  
+     |  HRIF_PushServoJ(self, boxID, rbtID, dACS)
+     |  
+     |  HRIF_PushServoP(self, boxID, rbtID, pose, ucs, tcp)
+     |  
+     |  HRIF_Quaternion2RPY(self, boxID, dQuaW, dQuaX, dQuaY, dQuaZ, result)
+     |  
+     |  HRIF_RPY2Quaternion(self, boxID, Rx, Ry, Rz, result)
+     |  
+     |  HRIF_ReadActJointCur(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadActJointPos(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadActJointVel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadActPos(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadActTcpPos(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadActTcpVel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadAxisErrorCode(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadBoxAI(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxAO(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxCI(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxCO(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxDI(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxDO(self, boxID, bit, result)
+     |  
+     |  HRIF_ReadBoxInfo(self, boxID, result)
+     |  
+     |  HRIF_ReadBrakeStatus(self, boxID, result)
+     |  
+     |  HRIF_ReadCmdJointCur(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCmdJointPos(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCmdJointVel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCmdTcpPos(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCmdTcpVel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCurFSM(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCurFSMFromCPS(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCurTCP(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCurUCS(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadCurWaypointID(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadEmergencyInfo(self, boxID, result)
+     |  
+     |  HRIF_ReadEndAI(self, boxID, rbtID, bit, result)
+     |  
+     |  HRIF_ReadEndBTN(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadEndDI(self, boxID, rbtID, bit, result)
+     |  
+     |  HRIF_ReadEndDO(self, boxID, rbtID, bit, result)
+     |  
+     |  HRIF_ReadEndHoldingRegisters(self, boxID, rbtID, nSlaveID, nFunction, nRegAddr, nRegCount, result)
+     |  
+     |  HRIF_ReadFTCabData(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadFTData(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadFTFreeDriveSpeedMode(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadFTMotionFreedom(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadForceControlState(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadJointMaxAcc(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadJointMaxJerk(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadJointMaxVel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadLinearMaxSpeed(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadMaxPayload(self, boxID, result)
+     |  
+     |  HRIF_ReadMovePathJState(self, boxID, rbtID, trackName, result)
+     |  
+     |  HRIF_ReadOverride(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadPathInfo(self, boxID, rbtID, sPathName, result)
+     |  
+     |  HRIF_ReadPathList(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadPathState(self, boxID, rbtID, sPathName, result)
+     |  
+     |  HRIF_ReadPayload(self, boxID, result)
+     |  
+     |  HRIF_ReadPointByName(self, boxID, rbtID, pointName, result)
+     |  
+     |  HRIF_ReadPointList(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadRobotFlags(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadRobotModel(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadRobotState(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadSafePlane(self, boxID, rbtID, name, result)
+     |  
+     |  HRIF_ReadSafePlaneList(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadServoEsJState(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadTCPByName(self, boxID, rbtID, TCP, result)
+     |  
+     |  HRIF_ReadTCPList(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadTcpVelocity(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadTrackProcess(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadTriStageSwitch(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadUCSByName(self, boxID, rbtID, UCS, result)
+     |  
+     |  HRIF_ReadUCSList(self, boxID, rbtID, result)
+     |  
+     |  HRIF_ReadVersion(self, boxID, rbtID, result)
+     |  
+     |  HRIF_RunFunc(self, boxID, funcName, params, result)
+     |  
+     |  HRIF_SetBoxAOMode(self, boxID, index, pattern)
+     |  
+     |  HRIF_SetBoxAOVal(self, boxID, index, value, pattern)
+     |  
+     |  HRIF_SetBoxCO(self, boxID, bit, state)
+     |  
+     |  HRIF_SetBoxDO(self, boxID, bit, state)
+     |  
+     |  HRIF_SetCollideLevel(self, boxID, nSafeLevel)
+     |  
+     |  HRIF_SetControlFreedom(self, boxID, rbtID, freedom)
+     |  
+     |  HRIF_SetControlGoal(self, boxID, rbtID, forcegoal, distance)
+     |  
+     |  HRIF_SetDampParams(self, boxID, rbtID, damp)
+     |  
+     |  HRIF_SetDepthThresholdForDampingArea(self, boxID, rbtID, depth)
+     |  
+     |  HRIF_SetEndDO(self, boxID, rbtID, bit, state)
+     |  
+     |  HRIF_SetFTFreeDriveSpeedMode(self, boxID, rbtID, mode)
+     |  
+     |  HRIF_SetFTFreeFactor(self, boxID, dLinear, dAngular)
+     |  
+     |  HRIF_SetFTMovingAvgFilterParams(self, boxID, rbtID, ForceState, TorqueState, ForceLength, TorqueLength)
+     |  
+     |  HRIF_SetFTWrenchThresholds(self, boxID, rbtID, force, torque)
+     |  
+     |  HRIF_SetForceControlGoal(self, boxID, rbtID, force_goal)
+     |  
+     |  HRIF_SetForceControlState(self, boxID, rbtID, state)
+     |  
+     |  HRIF_SetForceControlStrategy(self, boxID, rbtID, strategy)
+     |  
+     |  HRIF_SetForceDataLimit(self, boxID, rbtID, max, min)
+     |  
+     |  HRIF_SetForceDistanceLimit(self, boxID, rbtID, allowDistance, strengthLevel)
+     |  
+     |  HRIF_SetForceFreeDriveMode(self, boxID, rbtID, state)
+     |  
+     |  HRIF_SetForceToolCoordinateMotion(self, boxID, rbtID, mode)
+     |  
+     |  HRIF_SetForceZero(self, boxID, rbtID)
+     |  
+     |  HRIF_SetFreeDriveCompensateForce(self, boxID, rbtID, force, x, y, z)
+     |  
+     |  HRIF_SetFreeDriveMotionFreedom(self, boxID, df)
+     |  
+     |  HRIF_SetFreeDrivePositionAndOrientation(self, boxID, rbtID, position)
+     |  
+     |  HRIF_SetJointMaxAcc(self, boxID, rbtID, Joint)
+     |  
+     |  HRIF_SetJointMaxVel(self, boxID, rbtID, Joint)
+     |  
+     |  HRIF_SetLinearMaxAcc(self, boxID, rbtID, MaxAcc)
+     |  
+     |  HRIF_SetLinearMaxVel(self, boxID, rbtID, MaxVel)
+     |  
+     |  HRIF_SetMassParams(self, boxID, rbtID, mass)
+     |  
+     |  HRIF_SetMaxAcsRange(self, boxID, rbtID, pMax, pMin)
+     |  
+     |  HRIF_SetMaxFreeDriveVel(self, boxID, rbtID, vel, angular_vel)
+     |  
+     |  HRIF_SetMaxPcsRange(self, boxID, rbtID, pMax, pMin, pUcs)
+     |  
+     |  HRIF_SetMaxSearchDistance(self, boxID, rbtID, AllowDistance1, AllowDistance2, AllowDistance3, AllowDistance4, AllowDistance5, AllowDistance6)
+     |  
+     |  HRIF_SetMaxSearchVelocities(self, boxID, rbtID, MaxLinearVelocity, MaxAngularVelocity)
+     |  
+     |  HRIF_SetMoveParamsAO(self, boxID, nState, nIndex, dInitAO, dWeldingAO)
+     |  
+     |  HRIF_SetMovePathOverride(self, boxID, rbtID, MovePathOverride)
+     |  
+     |  HRIF_SetMoveTraceInitParams(self, boxID, rbtID, dK, dB, maxLimit, minLimit)
+     |  
+     |  HRIF_SetMoveTraceParams(self, boxID, rbtID, state, distance, dAwayVelocity, dGobackVelocity)
+     |  
+     |  HRIF_SetMoveTraceUcs(self, boxID, rbtID, direction)
+     |  
+     |  HRIF_SetOutputLog(self, output)
+     |  
+     |  HRIF_SetOverride(self, boxID, rbtID, vel)
+     |  
+     |  HRIF_SetPIDControlParams(self, boxID, rbtID, fP, fI, fD, tP, tI, tD)
+     |  
+     |  HRIF_SetPayload(self, boxID, rbtID, Mass, Center_X, Center_Y, Center_Z)
+     |  
+     |  HRIF_SetPoseTrackingMaxMotionLimit(self, boxID, rbtID, dMaxLineVel, dMaxOriVel)
+     |  
+     |  HRIF_SetPoseTrackingPIDParams(self, boxID, rbtID, dPosPID1, dPosPID2, dPosPID3, dOriPID1, dOriPID2, dOriPID3)
+     |  
+     |  HRIF_SetPoseTrackingState(self, boxID, rbtID, nState)
+     |  
+     |  HRIF_SetPoseTrackingStopTimeOut(self, boxID, rbtID, dTime)
+     |  
+     |  HRIF_SetPoseTrackingTargetPos(self, boxID, rbtID, dX, dY, dZ, dRx, dRy, dRz)
+     |  
+     |  HRIF_SetScriptForceControlState(self, boxID, rbtID, state, FTMode, UCS, TCP, vel, forces, freedom, PID, Mass, Damp, Stiff)
+     |  
+     |  HRIF_SetSimulation(self, boxID, state)
+     |  
+     |  HRIF_SetSteadyContactDeviationRange(self, boxID, rbtID, x, y, z, rx, ry, rz, nx, ny, nz, nrx, nry, nrz)
+     |  
+     |  HRIF_SetStiffParams(self, boxID, rbtID, stiff)
+     |  
+     |  HRIF_SetTCP(self, boxID, rbtID, TCP)
+     |  
+     |  HRIF_SetTCPByName(self, boxID, rbtID, TcpName)
+     |  
+     |  HRIF_SetTangentForceBounds(self, boxID, rbtID, Max, Min, Vel)
+     |  
+     |  HRIF_SetToolMotion(self, boxID, rbtID, state)
+     |  
+     |  HRIF_SetTrackingState(self, boxID, rbtID, state)
+     |  
+     |  HRIF_SetTriStageSwitch(self, boxID, rbtID, enable, mode)
+     |  
+     |  HRIF_SetUCS(self, boxID, rbtID, UCS)
+     |  
+     |  HRIF_SetUCSByName(self, boxID, rbtID, UcsName)
+     |  
+     |  HRIF_SetUpdateTrackingPose(self, boxID, rbtID, dX, dY, dZ, dRx, dRy, dRz)
+     |  
+     |  HRIF_ShutdownRobot(self, boxID)
+     |  
+     |  HRIF_SpeedJ(self, boxID, rbtID, cmdVel, acc, runtime)
+     |  
+     |  HRIF_SpeedL(self, boxID, rbtID, cmdVel, linearAcc, acc, runtime)
+     |  
+     |  HRIF_StartPushMovePathJ(self, boxID, rbtID, trackName, speedRatio, radius)
+     |  
+     |  HRIF_StartScript(self, boxID)
+     |  
+     |  HRIF_StartServo(self, boxID, rbtID, servoTime, lookaheadTime)
+     |  
+     |  HRIF_StartServoEsJ(self, boxID, rbtID, dServoTime, dLookaheadTime)
+     |  
+     |  HRIF_StopScript(self, boxID)
+     |  
+     |  HRIF_UcsTcp2Base(self, boxID, UcsTcp, TCP, UCS, result)
+     |  
+     |  HRIF_UpdateMovePathJName(self, boxID, rbtID, trackName, newName)
+     |  
+     |  HRIF_UpdatePathName(self, boxID, rbtID, sPathName, sPathNewName)
+     |  
+     |  HRIF_UpdateSafePlane(self, boxID, rbtID, name, UcsName, mode, display, switch)
+     |  
+     |  HRIF_WayPoint(self, boxID, rbtID, type, points, RawACSpoints, tcp, ucs, speed, Acc, radius, isJoint, isSeek, bit, state, cmdID)
+     |  
+     |  HRIF_WayPoint2(self, boxID, rbtID, type, EndPos, AuxPos, AcsPos, Tcp, Ucs, Vel, Acc, Radius, isJoint, isSeek, bit, state, cmdID)
+     |  
+     |  HRIF_WayPointEx(self, boxID, rbtID, type, points, RawACSpoints, tcp, ucs, speed, acc, radius, isJoint, isSeek, bit, state, cmdID)
+     |  
+     |  HRIF_WayPointRel(self, boxID, rbtID, nType, nPointList, Pos, rawACT, nrelMoveType, nAxisMask, dTarget, sTcpName, sUcsName, dVelocity, dAcc, dRadius, nIsUseJoint, nIsSeek, nIOBit, nIOState, strcmdID)
+     |  
+     |  HRIF_WriteEndHoldingRegisters(self, boxID, rbtID, nSlaveID, nFunction, nRegAddr, nRegCount, data)
+     |  
+     |  HRIF_cdsSetIO(self, boxID, rbtID, nEndDOMask, nEndDOVal, nBoxDOMask, nBoxDOVal, nBoxCOMask, nBoxCOVal, nBoxAOCH0_Mask, nBoxAOCH0_Mode, nBoxAOCH1_Mask, nBoxAOCH1_Mode, dbBoxAOCH0_Val, dbBoxAOCH1_Val)
+     |  
+     |  __init__(self)
+     |  
+     |  waitBlendingDone(self, boxID, rbtID)
+     |  
+     |  waitFSM(self, targetFSM, wait_timeout)
+     |  
+     |  waitMoveDone(self, boxID, rbtID)
+     |  
+     |  waitMovementDone(self, boxID, rbtID, result)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  MaxBox = 5
+     |  
+     |  clientIP = '127.0.0.1'
+     |  
+     |  clientPort = 10003
+     |  
+     |  dic_FSM = {0: '未初始化', 1: '初始化', 2: '与电箱控制板断开', 3: '连接电箱控制板', 4: '急停处理中...
+     |  
+     |  g_client_state = [False, False, False, False, False]
+     |  
+     |  g_clients = []
+     |  
+     |  xmlrpcAddr = 'http://127.0.0.1:20000'
+    
+    class RbtClient(builtins.object)
+     |  Methods defined here:
+     |  
+     |  Connect2CPS(self, hostName, nPort)
+     |  
+     |  DisconnectFromCPS(self)
+     |  
+     |  __init__(self)
+     |  
+     |  sendAndRecv(self, cmd, result)
+     |  
+     |  sendHRLog(self, nLevel, msg)
+     |  
+     |  sendScriptError(self, msg)
+     |  
+     |  sendScriptFinish(self, errorCode)
+     |  
+     |  sendVarValue(self, boxID, rbtID, VarName, Value)
+     |  
+     |  setOutputLog(self, output)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |  
+     |  Lock = allocate_lock(...)
+     |      allocate_lock() -> lock object
+     |      (allocate() is an obsolete synonym)
+     |      
+     |      Create a new lock object. See help(type(threading.Lock())) for
+     |      information about locks.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  clientIP = '127.0.0.1'
+     |  
+     |  clientPort = 10003
+     |  
+     |  lock = <unlocked _thread.lock object>
+     |  
+     |  output_log = False
+     |  
+     |  socket = <module 'socket' from '/home/quantumliu/anaconda3/envs/hans38...
+     |  
+     |  xmlrpcAddr = 'http://127.0.0.1:20000'
+    
+    class RbtFSM(enum.IntEnum)
+     |  RbtFSM(value, names=None, *, module=None, qualname=None, type=None, start=1)
+     |  
+     |  An enumeration.
+     |  
+     |  Method resolution order:
+     |      RbtFSM
+     |      enum.IntEnum
+     |      builtins.int
+     |      enum.Enum
+     |      builtins.object
+     |  
+     |  Data and other attributes defined here:
+     |  
+     |  enCPSState_Blackout48V = <RbtFSM.enCPSState_Blackout48V: 7>
+     |  
+     |  enCPSState_Blackouting48V = <RbtFSM.enCPSState_Blackouting48V: 6>
+     |  
+     |  enCPSState_Braking = <RbtFSM.enCPSState_Braking: 42>
+     |  
+     |  enCPSState_ControllerChecking = <RbtFSM.enCPSState_ControllerChecking:...
+     |  
+     |  enCPSState_ControllerConnecting = <RbtFSM.enCPSState_ControllerConnect...
+     |  
+     |  enCPSState_ControllerDisconnect = <RbtFSM.enCPSState_ControllerDisconn...
+     |  
+     |  enCPSState_ControllerDisconnecting = <RbtFSM.enCPSState_ControllerDisc...
+     |  
+     |  enCPSState_ControllerVersionError = <RbtFSM.enCPSState_ControllerVersi...
+     |  
+     |  enCPSState_Disable = <RbtFSM.enCPSState_Disable: 24>
+     |  
+     |  enCPSState_Disabling = <RbtFSM.enCPSState_Disabling: 28>
+     |  
+     |  enCPSState_ElectricBoxConnecting = <RbtFSM.enCPSState_ElectricBoxConne...
+     |  
+     |  enCPSState_ElectricBoxDisconnect = <RbtFSM.enCPSState_ElectricBoxDisco...
+     |  
+     |  enCPSState_Electrifying48V = <RbtFSM.enCPSState_Electrifying48V: 8>
+     |  
+     |  enCPSState_EmergencyStop = <RbtFSM.enCPSState_EmergencyStop: 5>
+     |  
+     |  enCPSState_EmergencyStopHandling = <RbtFSM.enCPSState_EmergencyStopHan...
+     |  
+     |  enCPSState_Enabling = <RbtFSM.enCPSState_Enabling: 23>
+     |  
+     |  enCPSState_Error = <RbtFSM.enCPSState_Error: 22>
+     |  
+     |  enCPSState_EtherCATError = <RbtFSM.enCPSState_EtherCATError: 17>
+     |  
+     |  enCPSState_FTClosingFreeDriver = <RbtFSM.enCPSState_FTClosingFreeDrive...
+     |  
+     |  enCPSState_FTFreeDriver = <RbtFSM.enCPSState_FTFreeDriver: 46>
+     |  
+     |  enCPSState_FTOpeningFreeDriver = <RbtFSM.enCPSState_FTOpeningFreeDrive...
+     |  
+     |  enCPSState_FreeDriver = <RbtFSM.enCPSState_FreeDriver: 31>
+     |  
+     |  enCPSState_HRAppDisconnected = <RbtFSM.enCPSState_HRAppDisconnected: 3...
+     |  
+     |  enCPSState_HRAppError = <RbtFSM.enCPSState_HRAppError: 40>
+     |  
+     |  enCPSState_Initialize = <RbtFSM.enCPSState_Initialize: 1>
+     |  
+     |  enCPSState_LongJogMoving = <RbtFSM.enCPSState_LongJogMoving: 26>
+     |  
+     |  enCPSState_Moving = <RbtFSM.enCPSState_Moving: 25>
+     |  
+     |  enCPSState_PreInitialize = <RbtFSM.enCPSState_PreInitialize: 0>
+     |  
+     |  enCPSState_Reseting = <RbtFSM.enCPSState_Reseting: 19>
+     |  
+     |  enCPSState_RobotClosingFreeDriver = <RbtFSM.enCPSState_RobotClosingFre...
+     |  
+     |  enCPSState_RobotCollisionStop = <RbtFSM.enCPSState_RobotCollisionStop:...
+     |  
+     |  enCPSState_RobotHolding = <RbtFSM.enCPSState_RobotHolding: 32>
+     |  
+     |  enCPSState_RobotLoadIdentify = <RbtFSM.enCPSState_RobotLoadIdentify: 4...
+     |  
+     |  enCPSState_RobotOpeningFreeDriver = <RbtFSM.enCPSState_RobotOpeningFre...
+     |  
+     |  enCPSState_RobotOutofSafeSpace = <RbtFSM.enCPSState_RobotOutofSafeSpac...
+     |  
+     |  enCPSState_RobotStopping = <RbtFSM.enCPSState_RobotStopping: 27>
+     |  
+     |  enCPSState_SafetyGuard = <RbtFSM.enCPSState_SafetyGuard: 12>
+     |  
+     |  enCPSState_SafetyGuardError = <RbtFSM.enCPSState_SafetyGuardError: 10>
+     |  
+     |  enCPSState_SafetyGuardErrorHandling = <RbtFSM.enCPSState_SafetyGuardEr...
+     |  
+     |  enCPSState_SafetyGuardHandling = <RbtFSM.enCPSState_SafetyGuardHandlin...
+     |  
+     |  enCPSState_ScriptHoldHandling = <RbtFSM.enCPSState_ScriptHoldHandling:...
+     |  
+     |  enCPSState_ScriptHolding = <RbtFSM.enCPSState_ScriptHolding: 36>
+     |  
+     |  enCPSState_ScriptRunning = <RbtFSM.enCPSState_ScriptRunning: 34>
+     |  
+     |  enCPSState_ScriptStopped = <RbtFSM.enCPSState_ScriptStopped: 38>
+     |  
+     |  enCPSState_ScriptStopping = <RbtFSM.enCPSState_ScriptStopping: 37>
+     |  
+     |  enCPSState_StandBy = <RbtFSM.enCPSState_StandBy: 33>
+     |  
+     |  enCPSState_TemperatureTooLow = <RbtFSM.enCPSState_TemperatureTooLow: 4...
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from enum.Enum:
+     |  
+     |  name
+     |      The name of the Enum member.
+     |  
+     |  value
+     |      The value of the Enum member.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Readonly properties inherited from enum.EnumMeta:
+     |  
+     |  __members__
+     |      Returns a mapping of member name->value.
+     |      
+     |      This mapping lists all enum members, including aliases. Note that this
+     |      is a read-only view of the internal mapping.
+
+FUNCTIONS
+    ReadDint(*args, reverse=False, result)
+    
+    ReadFloat(*args, reverse=False)
+    
+    WriteDint(value, reverse=False)
+    
+    WriteFloat(value, reverse=False)
+
+DATA
+    Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
+    __test__ = {}
+    dic_ErrorCode = {20018: '', 39500: '跟机器人连接未建立', 39501: '命令输入参数错误', 395...
+    lock = <unlocked _thread.lock object>
+
+FILE
+    /mnt/c/pyprojects/HansPy/CPS.cpython-38-x86_64-linux-gnu.so
+
+
