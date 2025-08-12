@@ -8,10 +8,13 @@
 """
 
 import time
-from typing import Optional, Tuple, List
+import logging
+import numpy as np
+from typing import Optional, Tuple, List, Union
 from wrapper.CPS_wrapper import CPSClient
 from .exceptions import RobotError, RobotStateError, RobotTimeoutError
 from .status_monitor import RobotStatusMonitor
+from .kinematics import Kinematics, Calculator
 
 class RobotController:
     """机器人控制器类，提供易用的机器人控制接口"""
@@ -28,6 +31,8 @@ class RobotController:
         self.robot_id = robot_id
         self.lib_wrapper = CPSClient()
         self.status_monitor = RobotStatusMonitor(self.lib_wrapper, box_id, robot_id)
+        self.kinematics = Kinematics(self.lib_wrapper, box_id, robot_id)
+        self.calculator = Calculator(self.lib_wrapper, box_id)
         self.default_timeout = 30.0  # 默认超时时间（秒）
         self.default_check_interval = 0.5  # 默认状态检查间隔（秒）
     
@@ -101,8 +106,18 @@ class RobotController:
         """
         # 先检查是否已使能
         if self.status_monitor.is_enabled():
-            print("机器人已处于使能状态")
+            logging.info("机器人已处于使能状态")
             return True
+            
+        # 检查当前状态是否为错误状态(22)，如果是则先复位
+        current_state = self.status_monitor.get_current_state()
+        if current_state == self.status_monitor.STATE_ERROR:
+            logging.warning("检测到机器人处于错误状态(22)，正在进行自动复位...")
+            self.reset()
+            # 等待复位完成并进入禁用状态
+            if not self.status_monitor.wait_for_state(
+                self.status_monitor.STATE_DISABLE, timeout):
+                raise RobotTimeoutError(-1, "复位超时，机器人未能进入去使能状态")
             
         # 发送使能指令
         ret = self.lib_wrapper.HRIF_GrpEnable(self.box_id, self.robot_id)
@@ -113,6 +128,7 @@ class RobotController:
         if not self.status_monitor.wait_for_standby(timeout):
             raise RobotTimeoutError(-1, "使能超时，机器人未能进入就绪状态")
             
+        logging.info("机器人已成功使能")
         return True
     
     def disable(self, timeout: float = 30.0) -> bool:
@@ -132,8 +148,17 @@ class RobotController:
         # 先检查是否已去使能
         state = self.status_monitor.get_current_state()
         if state == RobotStatusMonitor.STATE_DISABLE:
-            print("机器人已处于去使能状态")
+            logging.info("机器人已处于去使能状态")
             return True
+            
+        # 如果当前状态是错误状态(22)，先复位
+        if state == self.status_monitor.STATE_ERROR:
+            logging.warning("检测到机器人处于错误状态(22)，正在进行自动复位...")
+            self.reset()
+            # 等待复位完成并进入禁用状态
+            if not self.status_monitor.wait_for_state(
+                self.status_monitor.STATE_DISABLE, timeout):
+                raise RobotTimeoutError(-1, "复位超时，机器人未能进入去使能状态")
             
         # 只有在就绪状态(33)下才能发送去使能指令，等待机器人进入去使能状态wait_for_state
         if state != RobotStatusMonitor.STATE_STANDBY:
@@ -149,13 +174,14 @@ class RobotController:
         if ret != 0:
             raise RobotError(ret, f"去使能机器人失败，指令发送失败: {self._get_error_message(ret)}")
         else:
-            print("去使能指令发送成功，等待机器人进入去使能状态")
+            logging.info("去使能指令发送成功，等待机器人进入去使能状态")
         
         # 等待机器人进入去使能状态
         if not self.status_monitor.wait_for_state(
             RobotStatusMonitor.STATE_DISABLE, timeout):
             raise RobotTimeoutError(-1, "去使能超时，机器人未能进入去使能状态")
             
+        logging.info("机器人已成功去使能")
         return True
     
     def electrify(self) -> bool:
@@ -171,6 +197,7 @@ class RobotController:
         ret = self.lib_wrapper.HRIF_Electrify(self.box_id)
         if ret != 0:
             raise RobotError(ret, f"机器人上电失败: {self._get_error_message(ret)}")
+        logging.info("机器人已成功上电")
         return True
     
     def blackout(self) -> bool:
@@ -186,6 +213,7 @@ class RobotController:
         ret = self.lib_wrapper.HRIF_BlackOut(self.box_id)
         if ret != 0:
             raise RobotError(ret, f"机器人断电失败: {self._get_error_message(ret)}")
+        logging.info("机器人已成功断电")
         return True
     
     def get_current_state(self) -> int:
@@ -252,7 +280,29 @@ class RobotController:
         
         raise RobotTimeoutError(-1, "等待运动完成超时")
     
-    def move_j(self, points: List[float], raw_acs_points: List[float], 
+    def _convert_to_list(self, data: Union[List, tuple, np.ndarray]) -> list:
+        """
+        将numpy数组或tuple转换为Python列表
+        
+        Args:
+            data: 输入数据，可以是list, tuple 或 numpy array
+            
+        Returns:
+            list: 转换后的Python列表
+        """
+        if isinstance(data, np.ndarray):
+            return data.tolist()
+        elif isinstance(data, (list, tuple)):
+            return list(data)
+        else:
+            # 对于其他类型，尝试转换为列表
+            try:
+                return list(data)
+            except TypeError:
+                # 如果无法转换为列表，直接返回原数据
+                return data
+    
+    def move_j(self, points: Union[List[float], np.ndarray], raw_acs_points: Union[List[float], np.ndarray], 
                tcp: str = "TCP", ucs: str = "Base", 
                speed: float = 50.0, acc: float = 50.0, radius: float = 50.0,
                is_joint: int = 1, is_seek: int = 0, bit: int = 0, state: int = 0,
@@ -286,9 +336,13 @@ class RobotController:
         if not self.status_monitor.is_enabled():
             raise RobotStateError(-1, "机器人未使能，无法执行运动")
         
+        # 转换输入数据为Python列表
+        points_list = self._convert_to_list(points)
+        raw_acs_points_list = self._convert_to_list(raw_acs_points)
+        
         # 发送运动指令
         ret = self.lib_wrapper.HRIF_MoveJ(
-            self.box_id, self.robot_id, points, raw_acs_points,
+            self.box_id, self.robot_id, points_list, raw_acs_points_list,
             tcp, ucs, speed, acc, radius, is_joint, is_seek, bit, state, cmd_id)
         
         if ret != 0:
@@ -296,9 +350,10 @@ class RobotController:
         
         # 等待运动完成
         self.wait_for_motion_done(timeout)
+        logging.info("关节运动完成")
         return True
     
-    def move_l(self, points: List[float], raw_acs_points: List[float],
+    def move_l(self, points: Union[List[float], np.ndarray], raw_acs_points: Union[List[float], np.ndarray],
                tcp: str = "TCP", ucs: str = "Base",
                speed: float = 50.0, acc: float = 50.0, radius: float = 50.0,
                is_seek: int = 0, bit: int = 0, state: int = 0,
@@ -331,9 +386,13 @@ class RobotController:
         if not self.status_monitor.is_enabled():
             raise RobotStateError(-1, "机器人未使能，无法执行运动")
         
+        # 转换输入数据为Python列表
+        points_list = self._convert_to_list(points)
+        raw_acs_points_list = self._convert_to_list(raw_acs_points)
+        
         # 发送运动指令
         ret = self.lib_wrapper.HRIF_MoveL(
-            self.box_id, self.robot_id, points, raw_acs_points,
+            self.box_id, self.robot_id, points_list, raw_acs_points_list,
             tcp, ucs, speed, acc, radius, is_seek, bit, state, cmd_id)
         
         if ret != 0:
@@ -341,6 +400,7 @@ class RobotController:
         
         # 等待运动完成
         self.wait_for_motion_done(timeout)
+        logging.info("直线运动完成")
         return True
     
     def get_current_position(self) -> Tuple[List[float], List[float]]:
@@ -403,6 +463,7 @@ class RobotController:
         ret = self.lib_wrapper.HRIF_SetOverride(self.box_id, self.robot_id, vel)
         if ret != 0:
             raise RobotError(ret, f"设置速度比失败: {self._get_error_message(ret)}")
+        logging.info("速度比设置成功")
         return True
     
     def get_override(self) -> float:
@@ -438,6 +499,7 @@ class RobotController:
         ret = self.lib_wrapper.HRIF_GrpStop(self.box_id, self.robot_id)
         if ret != 0:
             raise RobotError(ret, f"停止机器人运动失败: {self._get_error_message(ret)}")
+        logging.info("机器人运动已停止")
         return True
     
     def reset(self) -> bool:
@@ -453,7 +515,135 @@ class RobotController:
         ret = self.lib_wrapper.HRIF_GrpReset(self.box_id, self.robot_id)
         if ret != 0:
             raise RobotError(ret, f"复位机器人失败: {self._get_error_message(ret)}")
+        logging.info("机器人已成功复位")
         return True
+    
+    def goto_pose(self, pose: List[float], tcp: List[float] = None, ucs: List[float] = None, 
+                  speed: float = 50.0, acc: float = 50.0, radius: float = 50.0):
+        """
+        运动到指定末端6d姿态,参数就是末端的6d pose，(xyz, yaw pitch row)
+        
+        Args:
+            pose: 末端6d姿态 [X, Y, Z, Rx, Ry, Rz]
+            tcp: 工具坐标系 [X, Y, Z, Rx, Ry, Rz]，默认为[0, 0, 0, 0, 0, 0]
+            ucs: 用户坐标系 [X, Y, Z, Rx, Ry, Rz]，默认为[0, 0, 0, 0, 0, 0]
+            speed: 速度，默认为50.0
+            acc: 加速度，默认为50.0
+            radius: 过渡半径，默认为50.0
+        """
+        # 获取当前关节位置作为参考
+        try:
+            current_joints = self.get_current_joint_positions()
+        except Exception as e:
+            raise Exception(f"获取当前关节位置失败: {e}")
+        
+        # 使用逆运动学解算目标关节位置
+        try:
+            target_joints = self.kinematics.inverse_kinematics(pose, current_joints, tcp, ucs)
+        except Exception as e:
+            raise Exception(f"逆运动学解算失败: {e}")
+        
+        # 执行关节运动
+        try:
+            self.move_j(pose, target_joints, "TCP" if tcp is None else "TCP", 
+                        "Base" if ucs is None else "UCS", speed, acc, radius, 
+                        1, 0, 0, 0, "0")
+        except Exception as e:
+            raise Exception(f"关节运动执行失败: {e}")
+
+    def goto_joint(self, joint_positions: List[float], 
+                   speed: float = 50.0, acc: float = 50.0, radius: float = 50.0):
+        """
+        运动到指定关节位置，只接受关节位置作为参数
+        
+        Args:
+            joint_positions: 关节位置 [J1, J2, J3, J4, J5, J6]
+            speed: 速度，默认为50.0
+            acc: 加速度，默认为50.0
+            radius: 过渡半径，默认为50.0
+        """
+        # 执行关节运动
+        try:
+            # 使用默认的笛卡尔位置作为参数占位符
+            cartesian_pos = [0, 0, 0, 0, 0, 0]
+            self.move_j(cartesian_pos, joint_positions, "TCP", "Base", 
+                        speed, acc, radius, 1, 0, 0, 0, "0")
+        except Exception as e:
+            raise Exception(f"关节运动执行失败: {e}")
+
+    def goto_delta(self, delta_pose: List[float], tcp: List[float] = None, ucs: List[float] = None,
+                   speed: float = 50.0, acc: float = 50.0, radius: float = 50.0):
+        """
+        运动到指定末端6d姿态的增量位置
+        
+        Args:
+            delta_pose: 末端6d姿态增量 [dX, dY, dZ, dRx, dRy, dRz]
+            tcp: 工具坐标系 [X, Y, Z, Rx, Ry, Rz]，默认为[0, 0, 0, 0, 0, 0]
+            ucs: 用户坐标系 [X, Y, Z, Rx, Ry, Rz]，默认为[0, 0, 0, 0, 0, 0]
+            speed: 速度，默认为50.0
+            acc: 加速度，默认为50.0
+            radius: 过渡半径，默认为50.0
+        """
+        # 获取当前位置
+        try:
+            current_cartesian = self.get_current_position()[1]  # 获取笛卡尔位置
+        except Exception as e:
+            raise Exception(f"获取当前笛卡尔位置失败: {e}")
+        
+        # 计算目标位置（当前位置 + 增量）
+        try:
+            target_pose = self.calculator.pose_add(current_cartesian, delta_pose)
+        except Exception as e:
+            raise Exception(f"计算目标位置失败: {e}")
+        
+        # 获取当前关节位置作为参考
+        try:
+            current_joints = self.get_current_joint_positions()
+        except Exception as e:
+            raise Exception(f"获取当前关节位置失败: {e}")
+        
+        # 使用逆运动学解算目标关节位置
+        try:
+            target_joints = self.kinematics.inverse_kinematics(target_pose, current_joints, tcp, ucs)
+        except Exception as e:
+            raise Exception(f"逆运动学解算失败: {e}")
+        
+        # 执行关节运动
+        try:
+            self.move_j(target_pose, target_joints, "TCP" if tcp is None else "TCP", 
+                        "Base" if ucs is None else "UCS", speed, acc, radius, 
+                        1, 0, 0, 0, "0")
+        except Exception as e:
+            raise Exception(f"关节运动执行失败: {e}")
+
+    def goto_delta_joint(self, delta_joints: List[float],
+                         speed: float = 50.0, acc: float = 50.0, radius: float = 50.0):
+        """
+        运动到指定关节位置的增量位置
+        
+        Args:
+            delta_joints: 关节位置增量 [dJ1, dJ2, dJ3, dJ4, dJ5, dJ6]
+            speed: 速度，默认为50.0
+            acc: 加速度，默认为50.0
+            radius: 过渡半径，默认为50.0
+        """
+        # 获取当前关节位置
+        try:
+            current_joints = self.get_current_joint_positions()
+        except Exception as e:
+            raise Exception(f"获取当前关节位置失败: {e}")
+        
+        # 计算目标关节位置（当前关节位置 + 增量）
+        target_joints = [current_joints[i] + delta_joints[i] for i in range(6)]
+        
+        # 执行关节运动
+        try:
+            # 使用默认的笛卡尔位置作为参数占位符
+            cartesian_pos = [0, 0, 0, 0, 0, 0]
+            self.move_j(cartesian_pos, target_joints, "TCP", "Base", 
+                        speed, acc, radius, 1, 0, 0, 0, "0")
+        except Exception as e:
+            raise Exception(f"关节运动执行失败: {e}")
     
     # 内部辅助方法
     def _wait_for_connection(self, timeout: float) -> bool:
@@ -480,7 +670,3 @@ class RobotController:
                 return ErrorCodeHelper.get_error_message(self.lib_wrapper, error_code, self.box_id)
         except:
             return f"未知错误 (错误码: {error_code})"
-
-
-# 为了向后兼容，保留原来的文件名拼写错误
-RobotConroller = RobotController

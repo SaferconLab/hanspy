@@ -21,6 +21,7 @@ except ImportError as e:
         print(f"当前Python版本: {py_version.major}.{py_version.minor}, 需要Python 3.8")
     else:
         print("请确保CPS模块已正确安装")
+    raise e
 
 
 class CPSClient:
