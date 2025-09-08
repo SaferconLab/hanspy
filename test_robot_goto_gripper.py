@@ -9,7 +9,7 @@ import time
 import sys
 import logging
 from lib.robot_controller import RobotController
-from wrapper import GripperController
+from lib.lebai_controller import GripperController
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

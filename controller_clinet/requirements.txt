@@ -1,0 +1,7 @@
+# 控制器客户端依赖包列表
+
+# Python标准库（通常不需要额外安装）
+# socket, json, time, threading, typing, enum
+
+# 项目特定依赖
+# 无额外依赖项，所有功能都基于Python标准库
