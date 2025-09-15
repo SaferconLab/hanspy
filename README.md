@@ -206,6 +206,57 @@ while True:
 viewer.stop()
 ```
 
+## 网络摄像头使用示例
+
+```python
+import cv2
+from controller_clinet.client import ControllerClient
+
+# 连接到控制器服务器
+client = ControllerClient(host="192.168.31.88", port=8888)
+if client.connect():
+    # 连接并使能机器人
+    if client.connect_robot() and client.enable_robot():
+        # 启动摄像头推流
+        data = {"camera_index": 9}
+        response = client._send_command("start_camera_stream", data)
+        if response.status != "error":
+            print("摄像头推流已启动")
+            
+            # 使用OpenCV读取推流
+            stream_url = "http://192.168.31.88:9999/stream"
+            cap = cv2.VideoCapture(stream_url)
+            
+            if cap.isOpened():
+                print("开始读取摄像头推流...")
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        print("无法接收帧")
+                        break
+                    
+                    # 显示帧
+                    cv2.imshow('Webcam Stream', frame)
+                    
+                    # 按 'q' 键退出
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                
+                cap.release()
+                cv2.destroyAllWindows()
+            else:
+                print("无法打开视频流")
+        else:
+            print(f"启动推流失败: {response.message}")
+    else:
+        print("连接或使能机器人失败")
+else:
+    print("连接服务器失败")
+
+# 断开连接
+client.disconnect()
+```
+
 ## 控制器架构详解
 
 ### 1. 控制器服务器 (controller_server)
@@ -406,3 +457,105 @@ class ControllerClient:
 ## 许可证
 
 [在此处添加许可证信息]
+
+## 网络摄像头推流服务
+
+### 开启推流服务
+
+网络摄像头推流服务可以通过以下方式开启：
+
+1. **自动启动**：服务器启动时会根据配置自动启动摄像头推流（默认启用）
+   
+   配置文件 `controller_server/config.json` 中的相关配置：
+   ```json
+   {
+       "webcam": {
+           "width": 1280,
+           "height": 720,
+           "fps": 30,
+           "auto_start": true,
+           "default_camera_index": 9,
+           "stream_port": 9999
+       }
+   }
+   ```
+
+2. **手动启动**：通过TCP命令手动启动摄像头推流
+   
+   使用控制器客户端发送 `START_CAMERA_STREAM` 命令：
+   ```python
+   from controller_clinet.client import ControllerClient
+   
+   client = ControllerClient(host="192.168.31.88", port=8888)
+   if client.connect():
+       # 连接机器人
+       if client.connect_robot():
+           # 使能机器人
+           if client.enable_robot():
+               # 启动摄像头推流
+               data = {"camera_index": 9}  # 指定摄像头索引
+               response = client._send_command("start_camera_stream", data)
+               if response.status != "error":
+                   print("摄像头推流已启动")
+               else:
+                   print(f"启动失败: {response.message}")
+   ```
+
+### 客户端通过OpenCV读取推流
+
+客户端可以通过OpenCV读取网络摄像头推流，具体步骤如下：
+
+1. **安装依赖**：
+   ```bash
+   pip install opencv-python
+   ```
+
+2. **读取推流**：
+   ```python
+   import cv2
+   
+   # 推流地址格式：http://<server_ip>:<stream_port>/stream
+   stream_url = "http://localhost:9999/stream"
+   
+   # 创建视频捕获对象
+   cap = cv2.VideoCapture(stream_url)
+   
+   # 检查是否成功打开流
+   if not cap.isOpened():
+       print("无法打开视频流")
+       exit()
+   
+   # 循环读取帧
+   while True:
+       ret, frame = cap.read()
+       if not ret:
+           print("无法接收帧")
+           break
+       
+       # 显示帧
+       cv2.imshow('Webcam Stream', frame)
+       
+       # 按 'q' 键退出
+       if cv2.waitKey(1) & 0xFF == ord('q'):
+           break
+   
+   # 释放资源
+   cap.release()
+   cv2.destroyAllWindows()
+   ```
+
+3. **使用测试脚本**：
+   项目提供了测试脚本 `test_webcam_controller.py`，可用于测试摄像头推流功能：
+   ```bash
+   python test_webcam_controller.py
+   ```
+
+### 推流技术细节
+
+- **推流工具**：使用 `ustreamer` 工具进行视频流推送
+- **视频格式**：MJPEG格式
+- **编码方式**：硬件编码（HW）
+- **分辨率**：默认1280x720
+- **帧率**：默认30FPS
+- **端口**：默认9999端口
+- **推流地址**：`http://<server_ip>:<stream_port>/stream`
