@@ -13,6 +13,8 @@ from typing import Dict, Any, Optional
 from controller.session_manager import SessionManager
 from controller.robot_controller import RobotControllerWrapper
 from controller.gripper_controller import GripperControllerWrapper
+from controller.realsense_controller import RealSenseController
+from controller.webcam_controller import WebcamController
 from protocol.message_protocol import (
     parse_message, CommandMessage, ResponseMessage, 
     MessageStatus, CommandType, create_success_response, 
@@ -39,6 +41,8 @@ class ControllerServer:
         self.session_manager = SessionManager()
         self.robot_controller = RobotControllerWrapper(config['robot'])
         self.gripper_controller = GripperControllerWrapper(config['gripper'])
+        self.realsense_controller = RealSenseController(config['realsense'])
+        self.webcam_controller = WebcamController(config['webcam'])
         
         # 服务器相关
         self.server_socket = None
@@ -259,6 +263,13 @@ class ControllerServer:
                     return self._handle_get_override(client_id, message)
                 elif command_type == CommandType.GOTO_DELTA:
                     return self._handle_goto_delta(client_id, message)
+                # 移除RealSense相关命令
+                elif command_type == CommandType.GET_CAMERAS_LIST:
+                    return self._handle_get_cameras_list(client_id, message)
+                elif command_type == CommandType.START_CAMERA_STREAM:
+                    return self._handle_start_camera_stream(client_id, message)
+                elif command_type == CommandType.STOP_CAMERA_STREAM:
+                    return self._handle_stop_camera_stream(client_id, message)
                 else:
                     return create_error_response(
                         message.message_id or "unknown",
@@ -1000,6 +1011,16 @@ class ControllerServer:
             except Exception as e:
                 self.logger.error(f"断开客户端 {client_id} 夹爪连接时发生错误: {e}")
             
+            # 停止摄像头流（如果正在运行且不是自动启动的）
+            try:
+                # 检查摄像头是否正在推流
+                if self.webcam_controller.is_streaming and not self.webcam_controller._auto_started:
+                    self.logger.info(f"客户端 {client_id} 断开连接，停止摄像头流")
+                    self.webcam_controller.stop_streaming()
+                    self.logger.info(f"客户端 {client_id} 的摄像头流已停止")
+            except Exception as e:
+                self.logger.error(f"停止客户端 {client_id} 摄像头流时发生错误: {e}")
+            
             # 从客户端列表中移除
             if client_id in self.clients:
                 del self.clients[client_id]
@@ -1019,3 +1040,262 @@ class ControllerServer:
             
         except Exception as e:
             self.logger.error(f"清理客户端 {client_id} 资源时发生错误: {e}")
+    
+    def _handle_connect_realsense(self, client_id: str, message: CommandMessage) -> str:
+        """处理连接RealSense相机命令"""
+        try:
+            self.logger.info(f"开始处理连接RealSense相机命令，客户端ID: {client_id}")
+            result = self.realsense_controller.connect()
+            
+            if result:
+                response = create_success_response(
+                    message.message_id or "unknown",
+                    "RealSense相机连接成功",
+                    {"connected": True}
+                )
+                self.logger.info(f"返回成功响应: {response}")
+                return response
+            else:
+                response = create_error_response(
+                    message.message_id or "unknown",
+                    "RealSense相机连接失败"
+                )
+                self.logger.info(f"返回错误响应: {response}")
+                return response
+        except Exception as e:
+            error_msg = f"连接RealSense相机时发生错误: {str(e)}"
+            self.logger.error(error_msg)
+            return create_error_response(
+                message.message_id or "unknown",
+                error_msg
+            )
+    
+    def _handle_disconnect_realsense(self, client_id: str, message: CommandMessage) -> str:
+        """处理断开RealSense相机连接命令"""
+        try:
+            result = self.realsense_controller.disconnect()
+            
+            if result:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "RealSense相机连接已断开",
+                    {"connected": False}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "断开RealSense相机连接失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"断开RealSense相机连接时发生错误: {str(e)}"
+            )
+    
+    def _handle_get_depth_frame(self, client_id: str, message: CommandMessage) -> str:
+        """处理获取深度帧命令"""
+        try:
+            depth_frame = self.realsense_controller.get_depth_frame()
+            
+            if depth_frame is not None:
+                # 将numpy数组转换为可序列化的格式
+                import base64
+                import pickle
+                frame_data = base64.b64encode(pickle.dumps(depth_frame)).decode('utf-8')
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "获取深度帧成功",
+                    {"frame_data": frame_data, "frame_shape": depth_frame.shape}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "获取深度帧失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"获取深度帧时发生错误: {str(e)}"
+            )
+    
+    def _handle_get_color_frame(self, client_id: str, message: CommandMessage) -> str:
+        """处理获取彩色帧命令"""
+        try:
+            color_frame = self.realsense_controller.get_color_frame()
+            
+            if color_frame is not None:
+                # 将numpy数组转换为可序列化的格式
+                import base64
+                import pickle
+                frame_data = base64.b64encode(pickle.dumps(color_frame)).decode('utf-8')
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "获取彩色帧成功",
+                    {"frame_data": frame_data, "frame_shape": color_frame.shape}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "获取彩色帧失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"获取彩色帧时发生错误: {str(e)}"
+            )
+    
+    def _handle_get_pointcloud(self, client_id: str, message: CommandMessage) -> str:
+        """处理获取点云数据命令"""
+        try:
+            pointcloud_data = self.realsense_controller.get_pointcloud()
+            
+            if pointcloud_data is not None:
+                # 将点云数据转换为可序列化的格式
+                import base64
+                import pickle
+                verts, texcoords = pointcloud_data
+                verts_data = base64.b64encode(pickle.dumps(verts)).decode('utf-8')
+                texcoords_data = base64.b64encode(pickle.dumps(texcoords)).decode('utf-8')
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "获取点云数据成功",
+                    {
+                        "vertices": verts_data,
+                        "texture_coords": texcoords_data,
+                        "vertices_shape": verts.shape,
+                        "texture_coords_shape": texcoords.shape
+                    }
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "获取点云数据失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"获取点云数据时发生错误: {str(e)}"
+            )
+    
+    def _handle_set_realsense_parameters(self, client_id: str, message: CommandMessage) -> str:
+        """处理设置RealSense相机参数命令"""
+        try:
+            data = message.data
+            params = data.get('params', {})
+            
+            result = self.realsense_controller.set_camera_parameters(params)
+            
+            if result:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "RealSense相机参数设置成功",
+                    {"set": True}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "RealSense相机参数设置失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"设置RealSense相机参数时发生错误: {str(e)}"
+            )
+
+    def _handle_get_cameras_list(self, client_id: str, message: CommandMessage) -> str:
+        """处理获取摄像头列表命令"""
+        try:
+            cameras = self.webcam_controller.get_camera_list()
+            
+            if cameras:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "获取摄像头列表成功",
+                    {"cameras": cameras}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "未找到可用摄像头"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"获取摄像头列表时发生错误: {str(e)}"
+            )
+
+    def _handle_start_camera_stream(self, client_id: str, message: CommandMessage) -> str:
+        """处理启动摄像头流命令"""
+        try:
+            data = message.data
+            camera_index = data.get('camera_index')
+            
+            if camera_index is None:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "缺少摄像头索引参数"
+                )
+            
+            # 检查是否已经自动启动了流
+            if self.webcam_controller._auto_started:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "视频流已由系统自动启动，不能手动启动"
+                )
+            
+            # 连接指定摄像头
+            result = self.webcam_controller.connect_camera(camera_index)
+            if not result:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    f"连接摄像头 {camera_index} 失败"
+                )
+            
+            # 启动流
+            result = self.webcam_controller.start_streaming()
+            if not result:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    f"启动摄像头 {camera_index} 流失败"
+                )
+            
+            return create_success_response(
+                message.message_id or "unknown",
+                "摄像头流启动成功",
+                {"camera_index": camera_index, "streaming": True}
+            )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"启动摄像头流时发生错误: {str(e)}"
+            )
+
+    def _handle_stop_camera_stream(self, client_id: str, message: CommandMessage) -> str:
+        """处理停止摄像头流命令"""
+        try:
+            # 停止流
+            result = self.webcam_controller.stop_streaming()
+            if not result:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "停止摄像头流失败"
+                )
+            
+            # 断开连接
+            result = self.webcam_controller.disconnect_camera()
+            if not result:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "断开摄像头连接失败"
+                )
+            
+            return create_success_response(
+                message.message_id or "unknown",
+                "摄像头流已停止",
+                {"streaming": False}
+            )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"停止摄像头流时发生错误: {str(e)}"
+            )

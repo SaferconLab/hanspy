@@ -43,6 +43,9 @@ class CommandType(Enum):
     GET_OVERRIDE = "get_override"
     GOTO_DELTA = "goto_delta"
     GOTO_DELTA_JOINT = "goto_delta_joint"
+    GET_CAMERAS_LIST = "get_cameras_list"
+    START_CAMERA_STREAM = "start_camera_stream"
+    STOP_CAMERA_STREAM = "stop_camera_stream"
 
 
 class MessageStatus(Enum):

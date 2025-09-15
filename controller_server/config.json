@@ -13,6 +13,24 @@
     "gripper": {
         "device_index": 0
     },
+    "realsense": {
+        "enable_depth": false,
+        "enable_color": false,
+        "depth_width": 640,
+        "depth_height": 480,
+        "color_width": 640,
+        "color_height": 480,
+        "depth_fps": 30,
+        "color_fps": 30
+    },
+    "webcam": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30,
+        "auto_start": true,
+        "default_camera_index": 9,
+        "stream_port": 9999
+    },
     "logging": {
         "level": "INFO",
         "file": "controller_server.log"
