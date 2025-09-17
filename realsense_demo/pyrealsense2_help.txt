@@ -1,0 +1,73 @@
+Help on package pyrealsense2:
+
+NAME
+    pyrealsense2 - # py libs (pyd/so) should be copied to pyrealsense2 folder
+
+PACKAGE CONTENTS
+    pyrealsense2
+    pyrsutils
+
+FUNCTIONS
+    enable_rolling_log_file(...) method of builtins.PyCapsule instance
+        enable_rolling_log_file(max_size: int) -> None
+    
+    log(...) method of builtins.PyCapsule instance
+        log(severity: pyrealsense2.pyrealsense2.log_severity, message: str) -> None
+    
+    log_to_callback(...) method of builtins.PyCapsule instance
+        log_to_callback(arg0: pyrealsense2.pyrealsense2.log_severity, arg1: Callable[[pyrealsense2.pyrealsense2.log_severity, pyrealsense2.pyrealsense2.log_message], None]) -> None
+    
+    log_to_console(...) method of builtins.PyCapsule instance
+        log_to_console(min_severity: pyrealsense2.pyrealsense2.log_severity) -> None
+    
+    log_to_file(...) method of builtins.PyCapsule instance
+        log_to_file(min_severity: pyrealsense2.pyrealsense2.log_severity, file_path: str) -> None
+    
+    option_from_string(...) method of builtins.PyCapsule instance
+        option_from_string(arg0: str) -> pyrealsense2.pyrealsense2.option
+    
+    reset_logger(...) method of builtins.PyCapsule instance
+        reset_logger() -> None
+    
+    rs2_deproject_pixel_to_point(...) method of builtins.PyCapsule instance
+        rs2_deproject_pixel_to_point(intrin: pyrealsense2.pyrealsense2.intrinsics, pixel: Annotated[list[float], FixedSize(2)], depth: float) -> Annotated[list[float], FixedSize(3)]
+        
+        Given pixel coordinates and depth in an image with no distortion or inverse distortion coefficients, compute the corresponding point in 3D space relative to the same camera
+    
+    rs2_fov(...) method of builtins.PyCapsule instance
+        rs2_fov(intrin: pyrealsense2.pyrealsense2.intrinsics) -> Annotated[list[float], FixedSize(2)]
+        
+        Calculate horizontal and vertical field of view, based on video intrinsics
+    
+    rs2_project_color_pixel_to_depth_pixel(...) method of builtins.PyCapsule instance
+        rs2_project_color_pixel_to_depth_pixel(data: pyrealsense2.pyrealsense2.BufData, depth_scale: float, depth_min: float, depth_max: float, depth_intrin: pyrealsense2.pyrealsense2.intrinsics, color_intrin: pyrealsense2.pyrealsense2.intrinsics, color_to_depth: pyrealsense2.pyrealsense2.extrinsics, depth_to_color: pyrealsense2.pyrealsense2.extrinsics, from_pixel: Annotated[list[float], FixedSize(2)]) -> Annotated[list[float], FixedSize(2)]
+        
+        Given pixel coordinates of the color image and a minimum and maximum depth, compute the corresponding pixel coordinates in the depth image. Returns [-1 -1] on failure.
+    
+    rs2_project_point_to_pixel(...) method of builtins.PyCapsule instance
+        rs2_project_point_to_pixel(intrin: pyrealsense2.pyrealsense2.intrinsics, point: Annotated[list[float], FixedSize(3)]) -> Annotated[list[float], FixedSize(2)]
+        
+        Given a point in 3D space, compute the corresponding pixel coordinates in an image with no distortion or forward distortion coefficients produced by the same camera
+    
+    rs2_transform_point_to_point(...) method of builtins.PyCapsule instance
+        rs2_transform_point_to_point(extrin: pyrealsense2.pyrealsense2.extrinsics, from_point: Annotated[list[float], FixedSize(3)]) -> Annotated[list[float], FixedSize(3)]
+        
+        Transform 3D coordinates relative to one sensor to 3D coordinates relative to another viewpoint
+
+DATA
+    D400 = <product_line.D400: 2>
+    D500 = <product_line.D500: 32>
+    DEPTH = <product_line.DEPTH: 46>
+    L500 = <product_line.L500: 8>
+    SR300 = <product_line.SR300: 4>
+    T200 = <product_line.T200: 16>
+    TRACKING = <product_line.T200: 16>
+    any = <product_line.any: 255>
+    any_intel = <product_line.any_intel: 254>
+    non_intel = <product_line.non_intel: 1>
+    sw_only = <product_line.sw_only: 256>
+
+FILE
+    /home/pku/anaconda3/envs/hanspy38/lib/python3.8/site-packages/pyrealsense2/__init__.py
+
+

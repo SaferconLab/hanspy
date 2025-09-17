@@ -10,6 +10,7 @@ import time
 import threading
 from typing import Dict, Any, Optional, List, Union
 from enum import Enum
+import numpy as np
 from .protocol import (
     CommandType, MessageStatus, BaseMessage, CommandMessage, 
     ResponseMessage, parse_message, create_success_response,
@@ -56,6 +57,50 @@ class ControllerClient:
         # 日志记录器
         import logging
         self.logger = logging.getLogger(__name__)
+    
+    def _recv_complete_message(self) -> str:
+        """
+        接收完整的消息，确保不会被截断
+        
+        Returns:
+            str: 接收到的完整消息
+        """
+        try:
+            # 先接收4字节的长度前缀
+            length_prefix = self._recv_all(4)
+            if not length_prefix:
+                raise Exception("无法接收消息长度前缀")
+            
+            # 解析消息长度
+            message_length = int.from_bytes(length_prefix, byteorder='big')
+            
+            # 接收完整的消息内容
+            message_bytes = self._recv_all(message_length)
+            if not message_bytes:
+                raise Exception("无法接收完整消息内容")
+            
+            return message_bytes.decode('utf-8')
+        except Exception as e:
+            self.logger.error(f"接收完整消息时发生错误: {e}")
+            raise
+    
+    def _recv_all(self, length: int) -> bytes:
+        """
+        接收指定长度的字节数据
+        
+        Args:
+            length (int): 要接收的字节数
+            
+        Returns:
+            bytes: 接收到的字节数据
+        """
+        data = b''
+        while len(data) < length:
+            packet = self.client_socket.recv(length - len(data))
+            if not packet:
+                raise Exception("连接已断开")
+            data += packet
+        return data
     
     def connect(self) -> bool:
         """
@@ -148,13 +193,26 @@ class ControllerClient:
                 )
                 
                 # 发送消息
-                self.client_socket.send(command.to_json().encode('utf-8'))
+                self.client_socket.sendall(command.to_json().encode('utf-8'))
                 
-                # 接收响应
-                response_data = self.client_socket.recv(4096)
-                response = parse_message(response_data.decode('utf-8'))
+                # 接收响应（带长度前缀）
+                response_str = self._recv_complete_message()
                 
-                return response
+                # 尝试解析响应
+                try:
+                    response = parse_message(response_str)
+                    return response
+                except ValueError as ve:
+                    self.logger.error(f"解析服务器响应失败: {ve}")
+                    self.logger.error(f"响应内容: {response_str}")
+                    # 创建一个错误响应消息
+                    error_response = ResponseMessage(
+                        status=MessageStatus.ERROR,
+                        message=f"无效的JSON格式: {ve}",
+                        data={},
+                        message_id=message_id
+                    )
+                    return error_response
                 
         except Exception as e:
             self.logger.error(f"发送命令失败: {e}")
@@ -170,6 +228,10 @@ class ControllerClient:
         Returns:
             bool: 处理是否成功
         """
+        if response is None:
+            self.logger.error("收到空响应")
+            return False
+            
         if response.status == MessageStatus.SUCCESS:
             self.logger.info(f"命令执行成功: {response.message}")
             return True
@@ -644,6 +706,100 @@ class ControllerClient:
         response = self._send_command(CommandType.COMMAND_COMPLETED)
         if response and response.status == MessageStatus.SUCCESS:
             return response.data.get("completed")
+        return None
+
+    # ==================== RealSense相机控制相关 ====================
+    
+    def connect_realsense(self) -> bool:
+        """
+        连接RealSense相机
+        
+        Returns:
+            bool: 连接是否成功
+        """
+        response = self._send_command(CommandType.CONNECT_REALSENSE)
+        return response and self._handle_response(response)
+    
+    def disconnect_realsense(self) -> bool:
+        """
+        断开RealSense相机连接
+        
+        Returns:
+            bool: 断开是否成功
+        """
+        response = self._send_command(CommandType.DISCONNECT_REALSENSE)
+        return response and self._handle_response(response)
+    
+    def get_depth_frame(self) -> Optional[np.ndarray]:
+        """
+        获取深度帧数据
+        
+        Returns:
+            np.ndarray: 深度帧数据，失败返回None
+        """
+        response = self._send_command(CommandType.GET_DEPTH_FRAME)
+        if response and response.status == MessageStatus.SUCCESS:
+            frame_data = response.data.get("frame_data")
+            frame_shape = response.data.get("frame_shape")
+            dtype = response.data.get("dtype", "uint16")
+            if frame_data and frame_shape:
+                import base64
+                # 解码base64数据
+                frame_bytes = base64.b64decode(frame_data.encode('ascii'))
+                # 重新构造numpy数组
+                frame_array = np.frombuffer(frame_bytes, dtype=dtype)
+                return frame_array.reshape(frame_shape)
+        return None
+    
+    def get_color_frame(self) -> Optional[np.ndarray]:
+        """
+        获取彩色帧数据
+        
+        Returns:
+            np.ndarray: 彩色帧数据，失败返回None
+        """
+        response = self._send_command(CommandType.GET_COLOR_FRAME)
+        if response and response.status == MessageStatus.SUCCESS:
+            frame_data = response.data.get("frame_data")
+            frame_shape = response.data.get("frame_shape")
+            dtype = response.data.get("dtype", "uint8")
+            if frame_data and frame_shape:
+                import base64
+                # 解码base64数据
+                frame_bytes = base64.b64decode(frame_data.encode('ascii'))
+                # 重新构造numpy数组
+                frame_array = np.frombuffer(frame_bytes, dtype=dtype)
+                return frame_array.reshape(frame_shape)
+        return None
+    
+    def get_pointcloud(self) -> Optional[tuple]:
+        """
+        获取点云数据
+        
+        Returns:
+            tuple: (顶点数据, 纹理坐标数据)，失败返回None
+        """
+        response = self._send_command(CommandType.GET_POINTCLOUD)
+        if response and response.status == MessageStatus.SUCCESS:
+            vertices_data = response.data.get("vertices")
+            texture_coords_data = response.data.get("texture_coords")
+            vertices_shape = response.data.get("vertices_shape")
+            texture_coords_shape = response.data.get("texture_coords_shape")
+            vertices_dtype = response.data.get("vertices_dtype", "float32")
+            texture_coords_dtype = response.data.get("texture_coords_dtype", "float32")
+            if vertices_data and texture_coords_data and vertices_shape and texture_coords_shape:
+                import base64
+                # 解码顶点数据
+                vertices_bytes = base64.b64decode(vertices_data.encode('ascii'))
+                vertices_array = np.frombuffer(vertices_bytes, dtype=vertices_dtype)
+                vertices = vertices_array.reshape(vertices_shape)
+                
+                # 解码纹理坐标数据
+                texture_coords_bytes = base64.b64decode(texture_coords_data.encode('ascii'))
+                texture_coords_array = np.frombuffer(texture_coords_bytes, dtype=texture_coords_dtype)
+                texture_coords = texture_coords_array.reshape(texture_coords_shape)
+                
+                return (vertices, texture_coords)
         return None
     
     def is_connected(self) -> bool:

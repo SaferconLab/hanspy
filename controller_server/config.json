@@ -14,15 +14,13 @@
         "device_index": 0
     },
     "realsense": {
-        "enable_depth": false,
-        "enable_color": false,
+        "enable_depth": true,
+        "enable_color": true,
         "depth_width": 640,
         "depth_height": 480,
         "color_width": 640,
-        "color_height": 480,
-        "depth_fps": 30,
-        "color_fps": 30
-    },
+        "color_height": 480
+        },
     "webcam": {
         "width": 1280,
         "height": 720,

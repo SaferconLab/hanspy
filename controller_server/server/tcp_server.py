@@ -61,6 +61,25 @@ class ControllerServer:
             filemode='a'
         )
     
+    def _send_complete_message(self, client_socket: socket.socket, message: str):
+        """
+        发送完整的消息，确保不会被截断
+        
+        Args:
+            client_socket (socket.socket): 客户端socket
+            message (str): 要发送的消息
+        """
+        try:
+            # 发送消息长度前缀
+            message_bytes = message.encode('utf-8')
+            message_length = len(message_bytes)
+            length_prefix = message_length.to_bytes(4, byteorder='big')
+            
+            # 发送长度前缀和消息内容
+            client_socket.sendall(length_prefix + message_bytes)
+        except Exception as e:
+            self.logger.error(f"发送完整消息时发生错误: {e}")
+    
     def start(self):
         """启动服务器"""
         try:
@@ -170,14 +189,17 @@ class ControllerServer:
                     
                     # 发送响应
                     if response:
-                        client_socket.send(response.encode('utf-8'))
+                        self._send_complete_message(client_socket, response)
                         
                 except json.JSONDecodeError:
                     error_msg = create_error_response(
                         "unknown", 
                         "无效的JSON格式消息"
                     )
-                    client_socket.send(error_msg.encode('utf-8'))
+                    try:
+                        client_socket.send(error_msg.encode('utf-8'))
+                    except Exception as send_error:
+                        self.logger.error(f"发送错误响应失败: {send_error}")
                 except Exception as e:
                     self.logger.error(f"处理客户端消息失败 {client_id}: {e}")
                     error_msg = create_error_response(
@@ -263,13 +285,26 @@ class ControllerServer:
                     return self._handle_get_override(client_id, message)
                 elif command_type == CommandType.GOTO_DELTA:
                     return self._handle_goto_delta(client_id, message)
-                # 移除RealSense相关命令
+                # 启动/停止摄像头推流
                 elif command_type == CommandType.GET_CAMERAS_LIST:
                     return self._handle_get_cameras_list(client_id, message)
                 elif command_type == CommandType.START_CAMERA_STREAM:
                     return self._handle_start_camera_stream(client_id, message)
                 elif command_type == CommandType.STOP_CAMERA_STREAM:
                     return self._handle_stop_camera_stream(client_id, message)
+                # RealSense相机控制命令
+                elif command_type == CommandType.CONNECT_REALSENSE:
+                    return self._handle_connect_realsense(client_id, message)
+                elif command_type == CommandType.DISCONNECT_REALSENSE:
+                    return self._handle_disconnect_realsense(client_id, message)
+                elif command_type == CommandType.GET_DEPTH_FRAME:
+                    return self._handle_get_depth_frame(client_id, message)
+                elif command_type == CommandType.GET_COLOR_FRAME:
+                    return self._handle_get_color_frame(client_id, message)
+                elif command_type == CommandType.GET_POINTCLOUD:
+                    return self._handle_get_pointcloud(client_id, message)
+                elif command_type == CommandType.SET_REALSENSE_PARAMETERS:
+                    return self._handle_set_realsense_parameters(client_id, message)
                 else:
                     return create_error_response(
                         message.message_id or "unknown",
@@ -1100,19 +1135,27 @@ class ControllerServer:
             if depth_frame is not None:
                 # 将numpy数组转换为可序列化的格式
                 import base64
-                import pickle
-                frame_data = base64.b64encode(pickle.dumps(depth_frame)).decode('utf-8')
-                return create_success_response(
-                    message.message_id or "unknown",
-                    "获取深度帧成功",
-                    {"frame_data": frame_data, "frame_shape": depth_frame.shape}
-                )
+                try:
+                    # 直接将numpy数组转换为base64编码的字符串，避免pickle序列化问题
+                    frame_data = base64.b64encode(depth_frame.tobytes()).decode('ascii')
+                    return create_success_response(
+                        message.message_id or "unknown",
+                        "获取深度帧成功",
+                        {"frame_data": frame_data, "frame_shape": depth_frame.shape, "dtype": str(depth_frame.dtype)}
+                    )
+                except Exception as serialize_error:
+                    self.logger.error(f"序列化深度帧数据时发生错误: {serialize_error}")
+                    return create_error_response(
+                        message.message_id or "unknown",
+                        f"序列化深度帧数据时发生错误: {str(serialize_error)}"
+                    )
             else:
                 return create_error_response(
                     message.message_id or "unknown",
                     "获取深度帧失败"
                 )
         except Exception as e:
+            self.logger.error(f"获取深度帧时发生错误: {e}")
             return create_error_response(
                 message.message_id or "unknown",
                 f"获取深度帧时发生错误: {str(e)}"
@@ -1126,19 +1169,27 @@ class ControllerServer:
             if color_frame is not None:
                 # 将numpy数组转换为可序列化的格式
                 import base64
-                import pickle
-                frame_data = base64.b64encode(pickle.dumps(color_frame)).decode('utf-8')
-                return create_success_response(
-                    message.message_id or "unknown",
-                    "获取彩色帧成功",
-                    {"frame_data": frame_data, "frame_shape": color_frame.shape}
-                )
+                try:
+                    # 直接将numpy数组转换为base64编码的字符串，避免pickle序列化问题
+                    frame_data = base64.b64encode(color_frame.tobytes()).decode('ascii')
+                    return create_success_response(
+                        message.message_id or "unknown",
+                        "获取彩色帧成功",
+                        {"frame_data": frame_data, "frame_shape": color_frame.shape, "dtype": str(color_frame.dtype)}
+                    )
+                except Exception as serialize_error:
+                    self.logger.error(f"序列化彩色帧数据时发生错误: {serialize_error}")
+                    return create_error_response(
+                        message.message_id or "unknown",
+                        f"序列化彩色帧数据时发生错误: {str(serialize_error)}"
+                    )
             else:
                 return create_error_response(
                     message.message_id or "unknown",
                     "获取彩色帧失败"
                 )
         except Exception as e:
+            self.logger.error(f"获取彩色帧时发生错误: {e}")
             return create_error_response(
                 message.message_id or "unknown",
                 f"获取彩色帧时发生错误: {str(e)}"
@@ -1152,26 +1203,36 @@ class ControllerServer:
             if pointcloud_data is not None:
                 # 将点云数据转换为可序列化的格式
                 import base64
-                import pickle
-                verts, texcoords = pointcloud_data
-                verts_data = base64.b64encode(pickle.dumps(verts)).decode('utf-8')
-                texcoords_data = base64.b64encode(pickle.dumps(texcoords)).decode('utf-8')
-                return create_success_response(
-                    message.message_id or "unknown",
-                    "获取点云数据成功",
-                    {
-                        "vertices": verts_data,
-                        "texture_coords": texcoords_data,
-                        "vertices_shape": verts.shape,
-                        "texture_coords_shape": texcoords.shape
-                    }
-                )
+                try:
+                    verts, texcoords = pointcloud_data
+                    # 直接将numpy数组转换为base64编码的字符串，避免pickle序列化问题
+                    verts_data = base64.b64encode(verts.tobytes()).decode('ascii')
+                    texcoords_data = base64.b64encode(texcoords.tobytes()).decode('ascii')
+                    return create_success_response(
+                        message.message_id or "unknown",
+                        "获取点云数据成功",
+                        {
+                            "vertices": verts_data,
+                            "texture_coords": texcoords_data,
+                            "vertices_shape": verts.shape,
+                            "texture_coords_shape": texcoords.shape,
+                            "vertices_dtype": str(verts.dtype),
+                            "texture_coords_dtype": str(texcoords.dtype)
+                        }
+                    )
+                except Exception as serialize_error:
+                    self.logger.error(f"序列化点云数据时发生错误: {serialize_error}")
+                    return create_error_response(
+                        message.message_id or "unknown",
+                        f"序列化点云数据时发生错误: {str(serialize_error)}"
+                    )
             else:
                 return create_error_response(
                     message.message_id or "unknown",
                     "获取点云数据失败"
                 )
         except Exception as e:
+            self.logger.error(f"获取点云数据时发生错误: {e}")
             return create_error_response(
                 message.message_id or "unknown",
                 f"获取点云数据时发生错误: {str(e)}"

@@ -69,7 +69,7 @@ def main():
     """主函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='控制器服务器')
-    parser.add_argument('--config', '-c', default='config.json', 
+    parser.add_argument('--config', '-c', default='/home/pku/pyprojects/HansPy/controller_server/config.json', 
                        help='配置文件路径 (默认: config.json)')
     args = parser.parse_args()
     

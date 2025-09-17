@@ -44,6 +44,13 @@ class CommandType(Enum):
     GET_CAMERAS_LIST = "get_cameras_list"
     START_CAMERA_STREAM = "start_camera_stream"
     STOP_CAMERA_STREAM = "stop_camera_stream"
+    # RealSense相机控制命令
+    CONNECT_REALSENSE = "connect_realsense"
+    DISCONNECT_REALSENSE = "disconnect_realsense"
+    GET_DEPTH_FRAME = "get_depth_frame"
+    GET_COLOR_FRAME = "get_color_frame"
+    GET_POINTCLOUD = "get_pointcloud"
+    SET_REALSENSE_PARAMETERS = "set_realsense_parameters"
 
 
 class MessageStatus(Enum):
@@ -104,6 +111,13 @@ class CommandMessage(BaseMessage):
                  message_id: Optional[str] = None):
         super().__init__(command_type.value, data, message_id)
         self.command_type = command_type
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        result = super().to_dict()
+        # 添加command_type字段，便于调试和识别
+        result["command_type"] = self.command_type.value
+        return result
 
 
 class ResponseMessage(BaseMessage):

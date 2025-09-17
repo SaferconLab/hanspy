@@ -46,6 +46,13 @@ class CommandType(Enum):
     GET_CAMERAS_LIST = "get_cameras_list"
     START_CAMERA_STREAM = "start_camera_stream"
     STOP_CAMERA_STREAM = "stop_camera_stream"
+    # RealSense相机控制命令
+    CONNECT_REALSENSE = "connect_realsense"
+    DISCONNECT_REALSENSE = "disconnect_realsense"
+    GET_DEPTH_FRAME = "get_depth_frame"
+    GET_COLOR_FRAME = "get_color_frame"
+    GET_POINTCLOUD = "get_pointcloud"
+    SET_REALSENSE_PARAMETERS = "set_realsense_parameters"
 
 
 class MessageStatus(Enum):
@@ -117,7 +124,7 @@ class ResponseMessage(BaseMessage):
         """转换为字典格式"""
         result = {
             "type": self.msg_type,
-            "status": self.status.value,  # 添加status字段到顶层
+            "status": self.status.value,
             "message": self.message,
             "data": self.data,
             "message_id": self.message_id

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RealSense相机控制器模块
-用于控制RealSense相机，包括连接、设置参数、获取图像和深度信息等功能
+用于控制RealSense相机，包括连接、设置参数、获取图像和深度信息、视频推流等功能
 """
 
 import logging
@@ -10,6 +10,9 @@ import pyrealsense2 as rs
 import numpy as np
 from typing import Tuple, Optional, Dict, Any
 import cv2
+import subprocess
+import threading
+import signal
 
 
 class RealSenseController:
@@ -33,6 +36,15 @@ class RealSenseController:
         self.depth_frame = None
         self.color_frame = None
         self.pointcloud = None
+        
+        # 视频推流相关属性
+        self.color_stream_process = None
+        self.depth_stream_process = None
+        self.is_color_streaming = False
+        self.is_depth_streaming = False
+        self.stream_lock = threading.Lock()
+        self._auto_started = False
+        self.virtual_camera_index = 0  # 虚拟摄像头索引
         
     def connect(self) -> bool:
         """
@@ -170,11 +182,12 @@ class RealSenseController:
                 self.logger.error("相机未连接，无法获取深度帧")
                 return None
                 
-            # 等待帧
-            frames = self.pipeline.wait_for_frames(timeout_ms=1000)
+            # 等待帧，增加超时时间到5秒
+            frames = self.pipeline.wait_for_frames(timeout_ms=5000)
             self.depth_frame = frames.get_depth_frame()
             
             if not self.depth_frame:
+                self.logger.warning("未能获取到深度帧")
                 return None
                 
             # 转换为numpy数组
@@ -198,11 +211,12 @@ class RealSenseController:
                 self.logger.error("相机未连接，无法获取彩色帧")
                 return None
                 
-            # 等待帧
-            frames = self.pipeline.wait_for_frames(timeout_ms=1000)
+            # 等待帧，增加超时时间到5秒
+            frames = self.pipeline.wait_for_frames(timeout_ms=5000)
             self.color_frame = frames.get_color_frame()
             
             if not self.color_frame:
+                self.logger.warning("未能获取到彩色帧")
                 return None
                 
             # 转换为numpy数组
@@ -225,12 +239,13 @@ class RealSenseController:
                 self.logger.error("相机未连接，无法获取点云数据")
                 return None
                 
-            # 等待帧
-            frames = self.pipeline.wait_for_frames(timeout_ms=1000)
+            # 等待帧，增加超时时间到5秒
+            frames = self.pipeline.wait_for_frames(timeout_ms=5000)
             depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
             
             if not depth_frame or not color_frame:
+                self.logger.warning("未能获取到深度帧或彩色帧，无法生成点云")
                 return None
             
             # 创建点云对象
