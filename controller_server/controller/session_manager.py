@@ -22,7 +22,6 @@ class ClientSession:
     gripper_connected: bool = False
     is_active: bool = True
 
-
 class SessionManager:
     """会话管理器类"""
     

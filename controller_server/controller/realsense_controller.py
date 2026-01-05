@@ -37,6 +37,10 @@ class RealSenseController:
         self.color_frame = None
         self.pointcloud = None
         
+        # 相机内参存储
+        self.depth_intrinsics = None
+        self.color_intrinsics = None
+        
         # 视频推流相关属性
         self.color_stream_process = None
         self.depth_stream_process = None
@@ -67,6 +71,8 @@ class RealSenseController:
                 fps = self.config.get('depth_fps', 30)
                 self.config_profile.enable_stream(
                     rs.stream.depth, 
+                    width,
+                    height,
                     rs.format.z16, 
                     fps
                 )
@@ -77,6 +83,8 @@ class RealSenseController:
                 fps = self.config.get('color_fps', 30)
                 self.config_profile.enable_stream(
                     rs.stream.color, 
+                    width,
+                    height,
                     rs.format.bgr8, 
                     fps
                 )
@@ -97,6 +105,17 @@ class RealSenseController:
                     self.color_sensor = sensor
             
             self.connected = True
+            
+            # 自动读取相机内参
+            intrinsics = self.get_camera_intrinsics()
+
+            if intrinsics:
+                self.depth_intrinsics = intrinsics.get('depth')
+                self.color_intrinsics = intrinsics.get('color')
+                self.logger.info("相机内参读取成功")
+            else:
+                self.logger.warning("相机内参读取失败")
+            
             self.logger.info("RealSense相机连接成功")
             return True
             
@@ -197,8 +216,7 @@ class RealSenseController:
         except Exception as e:
             self.logger.error(f"获取深度帧失败: {e}")
             return None
-    
-    
+        
     def get_color_frame(self) -> Optional[np.ndarray]:
         """
         获取彩色帧
@@ -214,7 +232,6 @@ class RealSenseController:
             # 等待帧，增加超时时间到5秒
             frames = self.pipeline.wait_for_frames(timeout_ms=5000)
             self.color_frame = frames.get_color_frame()
-            
             if not self.color_frame:
                 self.logger.warning("未能获取到彩色帧")
                 return None
@@ -272,7 +289,7 @@ class RealSenseController:
         获取相机内参
         
         Returns:
-            Optional[Dict[str, Any]]: 相机内参信息，失败返回None
+            Optional[Dict[str, Any]]: 相机内参信息，包含深度和彩色相机内参，失败返回None
         """
         try:
             if not self.connected:
@@ -281,25 +298,51 @@ class RealSenseController:
                 
             # 获取活动配置
             profile = self.pipeline.get_active_profile()
-            depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
-            depth_intrinsics = depth_profile.get_intrinsics()
             
-            intrinsics = {
-                'width': depth_intrinsics.width,
-                'height': depth_intrinsics.height,
-                'fx': depth_intrinsics.fx,
-                'fy': depth_intrinsics.fy,
-                'ppx': depth_intrinsics.ppx,
-                'ppy': depth_intrinsics.ppy,
-                'model': depth_intrinsics.model.value,
-                'coeffs': depth_intrinsics.coeffs
-            }
+            intrinsics = {}
+            
+            # 获取深度相机内参
+            try:
+                depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
+                depth_intrinsics = depth_profile.get_intrinsics()
+                intrinsics['depth'] = {
+                    'width': depth_intrinsics.width,
+                    'height': depth_intrinsics.height,
+                    'fx': depth_intrinsics.fx,
+                    'fy': depth_intrinsics.fy,
+                    'ppx': depth_intrinsics.ppx,
+                    'ppy': depth_intrinsics.ppy,
+                    'model': depth_intrinsics.model.value,
+                    'coeffs': depth_intrinsics.coeffs
+                }
+            except Exception as e:
+                self.logger.warning(f"获取深度相机内参失败: {e}")
+                intrinsics['depth'] = None
+            
+            # 获取彩色相机内参
+            try:
+                color_profile = rs.video_stream_profile(profile.get_stream(rs.stream.color))
+                color_intrinsics = color_profile.get_intrinsics()
+                intrinsics['color'] = {
+                    'width': color_intrinsics.width,
+                    'height': color_intrinsics.height,
+                    'fx': color_intrinsics.fx,
+                    'fy': color_intrinsics.fy,
+                    'ppx': color_intrinsics.ppx,
+                    'ppy': color_intrinsics.ppy,
+                    'model': color_intrinsics.model.value,
+                    'coeffs': color_intrinsics.coeffs
+                }
+            except Exception as e:
+                self.logger.warning(f"获取彩色相机内参失败: {e}")
+                intrinsics['color'] = None
             
             return intrinsics
             
         except Exception as e:
             self.logger.error(f"获取相机内参失败: {e}")
             return None
+
     
     def get_frame_metadata(self) -> Optional[Dict[str, Any]]:
         """

@@ -7,7 +7,7 @@
 import logging
 import time
 from typing import Optional
-from lib.lebai_controller import GripperController
+from lib.lebai_controller_uart import GripperController
 
 
 class GripperControllerWrapper:

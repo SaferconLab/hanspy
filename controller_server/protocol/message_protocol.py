@@ -53,6 +53,7 @@ class CommandType(Enum):
     GET_COLOR_FRAME = "get_color_frame"
     GET_POINTCLOUD = "get_pointcloud"
     SET_REALSENSE_PARAMETERS = "set_realsense_parameters"
+    GET_INTRINSICS = "get_intrinsics"
 
 
 class MessageStatus(Enum):
