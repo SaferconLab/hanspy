@@ -11,6 +11,7 @@ import time
 import logging
 from typing import Dict, Any, Optional
 from controller.session_manager import SessionManager
+
 from controller.robot_controller import RobotControllerWrapper
 from controller.gripper_controller import GripperControllerWrapper
 from controller.realsense_controller import RealSenseController
@@ -20,7 +21,6 @@ from protocol.message_protocol import (
     MessageStatus, CommandType, create_success_response, 
     create_error_response, create_pending_response, BaseMessage
 )
-
 
 class ControllerServer:
     """控制器服务器类"""
@@ -305,6 +305,8 @@ class ControllerServer:
                     return self._handle_get_pointcloud(client_id, message)
                 elif command_type == CommandType.SET_REALSENSE_PARAMETERS:
                     return self._handle_set_realsense_parameters(client_id, message)
+                elif command_type == CommandType.GET_INTRINSICS:
+                    return self._handle_get_intrinsics(client_id, message)
                 else:
                     return create_error_response(
                         message.message_id or "unknown",
@@ -640,24 +642,33 @@ class ControllerServer:
     def _handle_connect_gripper(self, client_id: str, message: CommandMessage) -> str:
         """处理连接夹爪命令"""
         try:
+            self.logger.info(f"开始处理连接夹爪命令，客户端ID: {client_id}")
             result = self.gripper_controller.connect()
             self.session_manager.set_gripper_connection_status(client_id, result)
             
+            self.logger.info(f"夹爪连接结果: {result}")
+            
             if result:
-                return create_success_response(
+                response = create_success_response(
                     message.message_id or "unknown",
                     "夹爪连接成功",
                     {"connected": True}
                 )
+                self.logger.info(f"返回成功响应: {response}")
+                return response
             else:
-                return create_error_response(
+                response = create_error_response(
                     message.message_id or "unknown",
                     "夹爪连接失败"
                 )
+                self.logger.info(f"返回错误响应: {response}")
+                return response
         except Exception as e:
+            error_msg = f"连接夹爪时发生错误: {str(e)}"
+            self.logger.error(error_msg)
             return create_error_response(
                 message.message_id or "unknown",
-                f"连接夹爪时发生错误: {str(e)}"
+                error_msg
             )
     
     def _handle_disconnect_gripper(self, client_id: str, message: CommandMessage) -> str:
@@ -694,13 +705,13 @@ class ControllerServer:
             if result:
                 return create_success_response(
                     message.message_id or "unknown",
-                    "夹爪幅度设置成功",
+                    f"夹爪幅度设置为 {amplitude}%",
                     {"amplitude": amplitude}
                 )
             else:
                 return create_error_response(
                     message.message_id or "unknown",
-                    "夹爪幅度设置失败"
+                    "设置夹爪幅度失败"
                 )
         except Exception as e:
             return create_error_response(
@@ -719,13 +730,13 @@ class ControllerServer:
             if result:
                 return create_success_response(
                     message.message_id or "unknown",
-                    "夹爪力度设置成功",
+                    f"夹爪力度设置为 {force}%",
                     {"force": force}
                 )
             else:
                 return create_error_response(
                     message.message_id or "unknown",
-                    "夹爪力度设置失败"
+                    "设置夹爪力度失败"
                 )
         except Exception as e:
             return create_error_response(
@@ -775,6 +786,50 @@ class ControllerServer:
             return create_error_response(
                 message.message_id or "unknown",
                 f"获取夹爪力矩时发生错误: {str(e)}"
+            )
+    
+    def _handle_find_gripper_travel(self, client_id: str, message: CommandMessage) -> str:
+        """处理夹爪找行程命令"""
+        try:
+            result = self.gripper_controller.find_travel()
+            
+            if result:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "夹爪找行程指令已发送",
+                    {"command_sent": True}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "夹爪找行程指令发送失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"夹爪找行程时发生错误: {str(e)}"
+            )
+    
+    def _handle_command_completed(self, client_id: str, message: CommandMessage) -> str:
+        """处理检查指令是否完成命令"""
+        try:
+            result = self.gripper_controller.is_command_completed()
+            
+            if result is not None:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "检查指令状态成功",
+                    {"completed": result}
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "检查指令状态失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"检查指令状态时发生错误: {str(e)}"
             )
     
     def _handle_goto_delta_joint(self, client_id: str, message: CommandMessage) -> str:
@@ -1359,4 +1414,26 @@ class ControllerServer:
             return create_error_response(
                 message.message_id or "unknown",
                 f"停止摄像头流时发生错误: {str(e)}"
+            )
+            
+    def _handle_get_intrinsics(self, client_id: str, message: CommandMessage) -> str:
+        """处理设置RealSense相机参数命令"""
+        try:
+            result = self.realsense_controller.get_camera_intrinsics()
+            
+            if result:
+                return create_success_response(
+                    message.message_id or "unknown",
+                    "RealSense相机内参获取成功",
+                    result
+                )
+            else:
+                return create_error_response(
+                    message.message_id or "unknown",
+                    "RealSense相机内参获取失败"
+                )
+        except Exception as e:
+            return create_error_response(
+                message.message_id or "unknown",
+                f"RealSense相机内参读取发生错误: {str(e)}"
             )

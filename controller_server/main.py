@@ -15,6 +15,7 @@ import socket
 # 添加项目根目录到Python路径，以便能够正确导入lib模块
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/..')
 
+
 from server.tcp_server import ControllerServer
 
 
@@ -69,7 +70,7 @@ def main():
     """主函数"""
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='控制器服务器')
-    parser.add_argument('--config', '-c', default='/home/pku/pyprojects/HansPy/controller_server/config.json', 
+    parser.add_argument('--config', '-c', default='/home/njt/Workspace/HansPy/controller_server/config.json', 
                        help='配置文件路径 (默认: config.json)')
     args = parser.parse_args()
     
